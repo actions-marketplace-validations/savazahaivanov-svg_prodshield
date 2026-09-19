@@ -1,26 +1,40 @@
 {
-  "name": "prodshield-cli",
+  "name": "prodshield",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "tsx src/index.ts",
-    "build": "tsc"
+  "description": "Zero-dependency pre-flight safety scanner and deployment gatekeeper for AI-generated applications.",
+  "author": "ProdShield Core Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/prodshield-dev/prodshield-cli.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/prodshield-dev/prodshield-cli/issues"
+  },
+  "homepage": "https://github.com/prodshield-dev/prodshield-cli#readme",
+  "keywords": [
+    "vibe-coding",
+    "ai-safety",
+    "cursor",
+    "claude-code",
+    "security-scanner",
+    "secret-detection",
+    "env-validator",
+    "preflight",
+    "deployment",
+    "cli"
+  ],
+  "main": "dist/index.js",
   "type": "module",
-  "dependencies": {
-    "commander": "^15.0.0",
-    "dotenv": "^18.0.0",
-    "fast-glob": "^3.3.3",
-    "picocolors": "^1.1.1"
+  "bin": {
+    "prodshield": "./dist/index.js"
   },
-  "devDependencies": {
-    "@types/node": "^26.6.1",
-    "tsx": "^4.23.13",
-    "typescript": "^7.0.2"
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "prepublishOnly": "npm run build"
   }
 }
