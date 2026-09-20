@@ -7,6 +7,7 @@ export interface SecretFinding {
 }
 
 const SECRET_PATTERNS: { type: string; pattern: RegExp }[] = [
+  { type: "OpenAI API Key", pattern: /\bsk-(?:proj-)?[A-Za-z0-9_-]{32,}/ },
   { type: "AWS Access Key ID", pattern: /\bAKIA[0-9A-Z]{16}\b/ },
   { type: "GitHub Token", pattern: /\bgh[pousr]_[A-Za-z0-9]{36,}\b/ },
   { type: "Slack Token", pattern: /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/ },

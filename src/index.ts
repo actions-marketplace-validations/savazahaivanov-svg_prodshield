@@ -1,18 +1,31 @@
 #!/usr/bin/env node
+import { readFileSync } from "node:fs";
 import { Command } from "commander";
 import pc from "picocolors";
 import { scan } from "./scanner.js";
 import { runFixer } from "./fixer.js";
 
+function readVersion(): string {
+  try {
+    const pkgUrl = new URL("../package.json", import.meta.url);
+    const pkg = JSON.parse(readFileSync(pkgUrl, "utf8")) as { version?: string };
+    return pkg.version ?? "1.0.0";
+  } catch {
+    return "1.0.0";
+  }
+}
+
 const program = new Command();
 
 program
   .name("prodshield")
+  .version(readVersion(), "-v, --version", "output the current version")
   .description("Scan a project for secrets, missing env vars and undeclared dependencies")
   .argument("[dir]", "project directory to scan", ".")
+  .option("-d, --dir <path>", "project directory to scan (overrides [dir])")
   .option("--fix", "Automatically remediate configuration issues")
-  .action(async (dir: string, options: { fix?: boolean }) => {
-    const targetDir = dir;
+  .action(async (dir: string, options: { fix?: boolean; dir?: string }) => {
+    const targetDir = options.dir ?? dir;
     const report = await scan(targetDir);
     console.log(pc.bold(`Scanned ${report.scannedFiles} files`));
 
