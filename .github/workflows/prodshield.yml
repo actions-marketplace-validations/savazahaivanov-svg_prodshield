@@ -1,6 +1,8 @@
 name: ProdShield Pre-Flight Check
 
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -17,5 +19,8 @@ jobs:
         with:
           node-version: 20
 
-      - name: Run ProdShield
-        run: npx --yes prodshield@latest --dir . --github-summary
+      - name: Run ProdShield Gatekeeper
+        uses: ./
+        with:
+          dir: '.'
+          format: 'markdown'
