@@ -1,0 +1,28 @@
+name: 'ProdShield Pre-Flight Gatekeeper'
+description: 'Zero-dependency pre-flight scanner catching AI package hallucinations, leaked secrets, and missing env vars.'
+author: 'ProdShield'
+branding:
+  icon: 'shield'
+  color: 'green'
+
+inputs:
+  dir:
+    description: 'Target directory to scan'
+    required: false
+    default: '.'
+  format:
+    description: 'Output format (text, json, markdown)'
+    required: false
+    default: 'text'
+  fix:
+    description: 'Attempt automatic remediation'
+    required: false
+    default: 'false'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run ProdShield
+      run: |
+        npx --yes prodshield@latest --dir "${{ inputs.dir }}" --format "${{ inputs.format }}" --github-summary
+      shell: bash
