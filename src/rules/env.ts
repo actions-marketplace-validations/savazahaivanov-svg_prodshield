@@ -20,6 +20,18 @@ function parseEnvContent(content: string): string[] {
   return keys;
 }
 
+const BUILTIN_IGNORED_ENV_VARS = new Set([
+  "NODE_ENV",
+  "CI",
+  "GITHUB_ACTIONS",
+  "GITHUB_STEP_SUMMARY",
+  "DO_NOT_TRACK",
+  "PRODSHIELD_TELEMETRY_URL",
+  "PRODSHIELD_NO_ANALYTICS",
+  "PORT",
+  "TZ"
+]);
+
 const ENV_PATTERNS: RegExp[] = [
   /process\.env\.([A-Z0-9_]+)/g,
   /import\.meta\.env\.([A-Z0-9_]+)/g,
@@ -56,7 +68,7 @@ export async function checkMissingEnvVars(
         const varName = match[1];
         if (!varName) continue; // Type guard: ensures varName is strictly string
 
-        if (["NODE_ENV", "PORT", "TZ"].includes(varName)) continue;
+        if (BUILTIN_IGNORED_ENV_VARS.has(varName)) continue;
 
         if (!usedVars.has(varName)) {
           usedVars.set(varName, new Set<string>());

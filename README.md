@@ -1,10 +1,11 @@
 # ProdShield
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![npm version](https://img.shields.io/npm/v/prodshield.svg)](https://www.npmjs.com/package/prodshield)
+[![npm downloads](https://img.shields.io/npm/dm/prodshield.svg)](https://www.npmjs.com/package/prodshield)
+[![License: MIT](https://img.shields.io/npm/l/prodshield.svg)](LICENSE)
 [![Node: >=18](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](https://nodejs.org)
-[![Zero Dependencies](https://img.shields.io/badge/dependencies-zero-blue.svg)](package.json)
 
-**The zero-dependency pre-flight safety scanner and deployment gatekeeper for AI-generated code.**
+**The pre-flight safety scanner and deployment gatekeeper for AI-generated code.**
 
 ---
 
@@ -12,11 +13,11 @@
 
 AI coding assistants such as Cursor, Claude, Bolt and Copilot ship code fast, but they routinely leave behind problems that only show up once you deploy:
 
-- **Hallucinated packages.** The assistant imports an npm package that was never added to `package.json`, or one that doesn't exist at all. The app runs locally on a stale `node_modules` and crashes in CI or production.
-- **Leaked secrets.** API keys and tokens get pasted straight into source files "just to make it work", then committed and pushed.
-- **Missing environment variables.** Code reads `process.env.SOMETHING` that is not declared in any `.env` file, so a fresh deploy fails or silently misbehaves.
+- **Hallucinated packages.** The assistant imports an npm package that was never added to `package.json`. The app runs locally on a stale `node_modules` and crashes in CI or production.
+- **Leaked secrets.** API keys and tokens get pasted straight into source files, then committed and pushed.
+- **Missing environment variables.** Code reads `process.env.SOMETHING` that is not declared in any `.env` file, so a fresh deploy fails or misbehaves.
 
-ProdShield is a fast pre-flight check that catches all three before they reach production, and exits non-zero so it can gate your deploy.
+ProdShield catches all three before they reach production and exits non-zero so it can gate your deploy.
 
 ## Quick Start
 
@@ -24,48 +25,86 @@ ProdShield is a fast pre-flight check that catches all three before they reach p
 # Scan the current project
 npx prodshield
 
-# Scan and automatically patch what can be safely fixed
+# Scan and patch what can be safely fixed
 npx prodshield --fix
-```
-
-ProdShield exits with code `1` if it finds secrets, undeclared environment variables or undeclared dependencies, and `0` if the project is clean. That makes it easy to drop into CI or a `predeploy` script:
-
-```json
-{
-  "scripts": {
-    "predeploy": "prodshield"
-  }
-}
 ```
 
 ## Features
 
 | Feature | Description |
 | --- | --- |
-| **Secret Leak Detection** | Finds hardcoded OpenAI, Stripe, AWS and GitHub tokens (plus Slack, Google API keys, private keys and generic hardcoded credentials) with file and line numbers. |
-| **Missing Environment Variable Audit** | Compares `process.env.*` / `import.meta.env.*` usage in your code against `.env`, `.env.local`, `.env.example` and `.env.development`. |
-| **Ghost / Hallucinated Package Detection** | Compares `import` / `require` statements against `dependencies` and `devDependencies` in `package.json`. Relative imports, Node built-ins and `@/` aliases are ignored. |
-| **Autonomous Remediation** | `--fix` safely creates or appends to `.env.example` for missing variables. Existing entries are never overwritten or removed. |
-| **Zero External Dependencies & Blazing Fast** | A single lightweight CLI that scans `.js`, `.jsx`, `.ts` and `.tsx` files in one pass, skipping `node_modules`, `dist`, `build` and `.git`. |
+| **Secret Leak Detection** | OpenAI, Stripe, AWS, GitHub, Slack and Google tokens, private keys and generic hardcoded credentials, with file and line numbers. |
+| **Missing Environment Variable Audit** | Compares `process.env.*` / `import.meta.env.*` usage against `.env`, `.env.local`, `.env.example` and `.env.development`. |
+| **Ghost / Hallucinated Package Detection** | Compares `import` / `require` statements against `dependencies` and `devDependencies`. Relative imports, Node built-ins and `@/` aliases are ignored. |
+| **Autonomous Remediation** | `--fix` creates or appends to `.env.example`. Existing entries are never overwritten. |
+| **CI-friendly output** | Text, JSON and Markdown reports, plus GitHub step summaries. |
 
 ## CLI Flags
 
 | Flag | Description |
 | --- | --- |
-| `--fix` | Automatically remediate configuration issues (creates or appends missing variables to `.env.example`). |
-| `-d, --dir <path>` | Project directory to scan. Defaults to the current directory. A positional `[dir]` argument works too. |
+| `-d, --dir <path>` | Directory to scan. Defaults to the current directory. A positional `[dir]` argument also works. |
+| `--fix` | Automatically remediate issues (creates or appends missing variables to `.env.example`). |
+| `--format <type>` | Output format: `text` (default), `json` or `markdown`. |
+| `--github-summary` | Append the Markdown report to the file named by `$GITHUB_STEP_SUMMARY`. |
+| `-v, --version` | Print the installed version. |
 | `-h, --help` | Show usage information. |
-| `-V, --version` | Print the installed version. |
 
-## What `--fix` Does (and Doesn't)
+Exit codes: `0` when the project is clean (or missing env vars were fixed), `1` when unresolved secrets, env vars or dependencies remain.
 
-`--fix` only touches `.env.example`:
+## Configuration
 
-- If the file doesn't exist, it is created with the header `# Generated by ProdShield Pre-Flight Fixer`.
-- Each missing variable is appended as `KEY_NAME=your_key_name_here`.
-- Keys that are already declared are skipped, and existing lines are never modified.
+Create a `.prodshieldrc.json` in the directory you scan:
 
-Secrets and undeclared packages are **reported but never changed automatically**. Rotate any leaked key and install missing packages yourself.
+```json
+{
+  "ignoreSecrets": ["Hardcoded Credential"],
+  "ignorePackages": ["@my-org/*", "virtual-module"],
+  "ignorePaths": ["**/fixtures/**", "scripts/legacy/**"]
+}
+```
+
+| Key | Type | Meaning |
+| --- | --- | --- |
+| `ignoreSecrets` | `string[]` | Secret types to ignore, matched by name (for example `OpenAI API Key`). `*` is a wildcard. |
+| `ignorePackages` | `string[]` | Package names to exclude from the undeclared-dependency check. `*` is a wildcard. |
+| `ignorePaths` | `string[]` | Glob patterns for files to skip entirely. |
+
+All keys are optional. Without a config file, nothing extra is ignored.
+
+## GitHub Actions
+
+Copy this into `.github/workflows/prodshield.yml` to gate every pull request:
+
+```yaml
+name: ProdShield Pre-Flight Check
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run ProdShield
+        run: npx --yes prodshield@latest --dir . --github-summary
+```
+
+The report appears on the workflow run's summary page, and the job fails if issues are found.
+
+## Telemetry
+
+ProdShield can send an anonymous usage ping containing only the CLI version, run duration and total finding count. It never includes file names, paths, code or secret values.
+
+It is **off unless a collector URL is configured** via `PRODSHIELD_TELEMETRY_URL`, and it is always disabled when `DO_NOT_TRACK=1` or `PRODSHIELD_NO_ANALYTICS=1` is set. Requests time out after 1.5 seconds and failures are silent.
 
 ## License
 
