@@ -2,7 +2,7 @@
 
 # 🛡️ ProdShield
 
-**Pre-flight safety scanner and deployment gatekeeper for AI-generated code** (Cursor, Claude, Copilot)
+**Sub-second pre-flight gatekeeper catching AI package hallucinations (slopsquatting), leaked secrets, and undeclared env vars.** (Cursor, Claude, Copilot)
 
 [![npm version](https://img.shields.io/npm/v/prodshield.svg)](https://www.npmjs.com/package/prodshield)
 [![GitHub Marketplace](https://img.shields.io/badge/Marketplace-ProdShield-blue?logo=github)](https://github.com/marketplace/actions/prodshield-pre-flight-gatekeeper)
