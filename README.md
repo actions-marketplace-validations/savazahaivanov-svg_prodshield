@@ -24,6 +24,12 @@ AI coding assistants ship code fast — but they don't ship it *safe*. ProdShiel
 
 ProdShield scans for all three and exits non-zero the moment it finds one, so it can gate a PR or a deploy before the damage ships.
 
+## Enterprise Threat Model: Why Traditional SCA Fails AI Code
+
+1. **The Zero-CVE Blind Spot (Slopsquatting).** Traditional SCA tools (Snyk, Dependabot) key off known CVE feeds — they flag a *vulnerable* package, not a *nonexistent* one. When an LLM hallucinates a plausible-sounding package name (a conflated or invented library), there is no CVE to match because the package was never a known dependency in the first place. Attackers pre-register these hallucinated names on public registries with malicious install hooks, betting that someone's assistant will suggest the name again. ProdShield checks every import against your own `package.json` before resolution, so a hallucinated name is flagged the moment it appears in source — no CVE feed required.
+2. **Sub-400ms Static Analysis, Zero Runtime Dependencies.** ProdShield ships with no heavy background daemon and no multi-gigabyte Docker container. It's a single lightweight CLI that scans source text directly, so it drops into a pre-commit hook or a CI job without adding meaningful build time.
+3. **Data Sovereignty by Design.** 100% local execution. Source code, tokens, and repo manifests are never transmitted outside the execution environment. See [Privacy & Telemetry](#privacy--telemetry) for exactly what, if anything, leaves the machine.
+
 ## Quick Start
 
 ### Zero-install CLI
